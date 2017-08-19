@@ -1,0 +1,44 @@
+---
+- hosts: 127.0.0.1
+  connection: local
+  remote_user: vagrant
+  become: yes
+  tasks:
+    - name: install required packages
+      yum:
+        name:
+          - git
+          - autoconf
+          - gcc
+          - ncurses-devel
+          - openssl
+          - openssl-devel
+          - unixODBC
+          - unixODBC-devel
+          - gcc-c++
+          - fop
+    - name: download erlang source
+      git:
+        repo: https://github.com/erlang/otp.git
+        dest: /usr/local/src/otp
+    - name: build & install erlang
+      command: "{{ item }}"
+      args:
+        chdir: /usr/local/src/otp
+      with_items:
+        - ./otp_build autoconf
+        - ./configure
+        - make
+        - make install
+    - name: download elixir source
+      git:
+        repo: https://github.com/elixir-lang/elixir.git
+        dest: /usr/local/src/elixir
+    - name: build & install elixir
+      command: "make clean test"
+      args:
+        chdir: /usr/local/src/elixir
+      environment:
+        PATH: "{{ ansible_env.PATH }}:/usr/local/bin"
+    - name: setting to vagrant user
+      command: echo "export PATH=\$PATH:/usr/local/src/elixir/bin" >> /home/vagrant/.bash_profile
